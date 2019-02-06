@@ -3,11 +3,6 @@
  * @brief 頂点配列オブジェクトのクラス
  */
 
-#ifndef INC_2D_GAME_OBJECT_H
-#define INC_2D_GAME_OBJECT_H
-
-#endif //INC_2D_GAME_OBJECT_H
-
 #pragma once
 
 #include <GL/glew.h>

@@ -5,11 +5,6 @@
  *         ウィンドウのサイズが変更された時だけglViewport()を実行して、ビューポートの設定を行う
  */
 
-#ifndef INC_2D_GAME_WINDOW_H
-#define INC_2D_GAME_WINDOW_H
-
-#endif //INC_2D_GAME_WINDOW_H
-
 #pragma once
 
 #include <iostream>

@@ -4,11 +4,6 @@
  * @detail 描画するObjectクラスのインスタンス(図形データ)を指すポインタを保持
  */
 
-#ifndef INC_2D_GAME_SHAPE_H
-#define INC_2D_GAME_SHAPE_H
-
-#endif //INC_2D_GAME_SHAPE_H
-
 #pragma once
 
 #include <memory>
