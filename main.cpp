@@ -74,7 +74,7 @@ GLboolean printProgramInfoLog(GLuint program) {
  * @param program プログラムオブジェクト名
  * @return エラーならば0を返す
  */
-GLboolean printVlidateInfoLog(GLuint program) {
+GLboolean printValidateInfoLog(GLuint program) {
     // 実行可能結果を取得する
     glValidateProgram(program);
     GLint status;
@@ -137,7 +137,7 @@ GLuint createProgram(const char *vsrc, const char *fsrc) {
     glLinkProgram(program);
 
     // 作成したプログラムオブジェクトを返す
-    if (printProgramInfoLog(program) /*&& printVlidateInfoLog(program)*/)
+    if (printProgramInfoLog(program) /*&& printValidateInfoLog(program)*/)
         return program;
 
     // プログラムオブジェクトが作成できなければ0を返す
@@ -244,6 +244,7 @@ int main(int argc, char * argv[]) {
     // プログラムオブジェクトからuniform変数の場所を取得する
     const GLint sizeLoc(glGetUniformLocation(program, "size"));
     const GLint scaleLoc(glGetUniformLocation(program, "scale"));
+    const GLint locationLoc(glGetUniformLocation(program, "location"));
 
     // 図形データを作成する
     std::unique_ptr<const Shape> shape(new Shape(2, 4, rectangleVertex));
@@ -259,6 +260,7 @@ int main(int argc, char * argv[]) {
         // uniform変数に値を設定する
         glUniform2fv(sizeLoc, 1, window.getSize());
         glUniform1f(scaleLoc, window.getScale());
+        glUniform2fv(locationLoc, 1, window.getLocation());
 
         // ここで描画処理を行う
         // 図形を描画する

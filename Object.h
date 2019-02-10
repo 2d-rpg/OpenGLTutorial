@@ -52,7 +52,7 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Vertex), vertex, GL_STATIC_DRAW);
 
-        // 統合されている頂点バッファオブジェクトをin変数から参照できるようにする
+        // 結合されている頂点バッファオブジェクトをin変数から参照できるようにする
         glVertexAttribPointer(0, size, GL_FLOAT, GL_FALSE, 0, 0);
         glEnableVertexAttribArray(0);
     }
