@@ -1,11 +1,12 @@
 #include<cstdlib>
-#include <iostream>
+#include<iostream>
 #include<fstream>
-#include <vector>
+#include<vector>
 #include<memory>
 #include<GL/glew.h>
-#include <GLFW/glfw3.h>
-#include "Shape.h"
+#include<GLFW/glfw3.h>
+#include"Window.h"
+#include"Shape.h"
 
 //プログラムオブジェクトのリンク結果を表示する
 // program: プログラムオブジェクト名
@@ -176,48 +177,60 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     //ウィンドウを作成する
-    GLFWwindow *const window(glfwCreateWindow(640,480,"Hello!",NULL,NULL));
-    if(window == NULL){
-        //ウィンドウが作成できなかった
-        std::cerr << "Can't create GLFW window." << std::endl;
-        return 1;
-    }
+    Window window;
+//    GLFWwindow *const window(glfwCreateWindow(640,480,"Hello!",NULL,NULL));
+//    if(window == NULL){
+//        //ウィンドウが作成できなかった
+//        std::cerr << "Can't create GLFW window." << std::endl;
+//        return 1;
+//    }
 
-    //作成したウィンドウをOpenGLの処理対象にする
-    glfwMakeContextCurrent(window);
-
-    //GLEWを初期化する
-    glewExperimental = GL_TRUE;
-    if(glewInit() != GLEW_OK)
-    {
-        //GLEWの初期化に失敗した
-        std::cerr << "Can't initialize GLEW" << std::endl;
-        return 1;
-    }
+//    //GLEWを初期化する
+//    glewExperimental = GL_TRUE;
+//    if(glewInit() != GLEW_OK)
+//    {
+//        //GLEWの初期化に失敗した
+//        std::cerr << "Can't initialize GLEW" << std::endl;
+//        return 1;
+//    }
 
 
-    // 垂直同期のタイミングを待つ
-    glfwSwapInterval(1);
+//    // 垂直同期のタイミングを待つ
+//    glfwSwapInterval(1);
 
     //背景色を指定する
     glClearColor(1.0f,1.0f,1.0f,0.0f);
-
-    //ビューポートを作成する
-    glViewport(320,240,640,480);
+//
+//    //ビューポートを作成する
+//    glViewport(320,240,640,480);
 
     //プログラムオブジェクトを作成する
     const GLuint program(loadProgram("point.vert", "point.frag"));
+
+    //uniform変数の場所を取得する
+    const GLint sizeLoc(glGetUniformLocation(program,"size"));
+    const GLint scaleLoc(glGetUniformLocation(program,"scale"));
+    const GLint locationLoc(glGetUniformLocation(program,"location"));
+
+    // uniform 変数の場所を取得する
+    const GLint aspectLoc(glGetUniformLocation(program,"aspect"));
 
     //図形データを作成する
     std::unique_ptr<const Shape> shape(new Shape(2,4,rectangleVertex));
 
     //ウィンドウが開いている間繰り返す
-    while(glfwWindowShouldClose(window) == GL_FALSE){
+    while(window.shouldClose() == GL_FALSE){
         //ウィンドウを消去する
         glClear(GL_COLOR_BUFFER_BIT);
 
         //シェーダプログラムの使用開始
         glUseProgram(program);
+
+        // uniform変数に値を設定する
+        //glUniform1f(aspectLoc, window.getAspect());
+        glUniform2fv(sizeLoc,1,window.getSize());
+        glUniform1f(scaleLoc,window.getScale());
+        glUniform2fv(locationLoc,1,window.getLocation());
 
         //
         //ここで描写処理を行う
@@ -225,10 +238,11 @@ int main()
         //
 
         //カラーバッファを入れ替える
-        glfwSwapBuffers(window);
+        //glfwSwapBuffers(window);
+        window.swapBuffers();
 
         //イベントを取り出す
-        glfwWaitEvents();
+        //glfwWaitEvents();
     }
 }
 
