@@ -1,271 +1,507 @@
-/*
- * @file main.cpp
- */
-
-
-#include <cstdlib>
+#include<cstdlib>
 #include <iostream>
-#include <fstream>
+#include<fstream>
 #include <vector>
-#include <memory>
-#include <GL/glew.h>
+#include<memory>
+#include<GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "Window.h"
 #include "Shape.h"
 
-/*
- * @fn
- * シェーダオブジェクトのコンパイル結果を表示する
- * @param shader シェーダオブジェクト名
- * @param str コンパイルエラーが発生した場所を示す文字列
- * @return エラーならば0を返す
- */
-GLboolean printShaderInfoLog(GLuint shader, const char *str) {
-    // コンパイル結果を取得する
+//プログラムオブジェクトのリンク結果を表示する
+// program: プログラムオブジェクト名
+GLboolean printProgramInfoLog(GLuint program){
+    //リンクを取得する
+    GLint status;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if(status == GL_FALSE)std::cerr << "Link Error." << std::endl;
+
+    //シェーダのリンク時のログの長さを取得する
+    GLsizei bufSize;
+    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufSize);
+
+    if(bufSize > 1){
+        //シェーダのリンク時のログを取得する
+        std::vector<GLchar> infoLog(bufSize);
+        GLsizei length;
+        glGetProgramInfoLog(program, bufSize, &length, &infoLog[0]);
+        std::cerr << &infoLog[0] << std:: endl;
+    }
+    return static_cast<GLboolean>(status);
+}
+
+//シェーダオブジェクトのコンパイル結果を表示する
+// shader: シェーダオブジェクト名
+// str: コンパイルエラーが発生した場所を示す文字列
+GLboolean printShaderInfoLog(GLuint shader, const char *str){
+    //コンパイル結果を取得する
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if (status == GL_FALSE) std::cerr << "Compile Error in " << str << std::endl;
+    if(status == GL_FALSE) std::cerr << "Compile Error in " << str << std::endl;
 
-    // シェーダのコンパイル時のログの長さを取得する
+    //シェーダのコンパイル時のログの長さを取得する
     GLsizei bufSize;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &bufSize);
 
-    if (bufSize > 1) {
-        // シェーダのコンパイル時のログの内容を取得する
+    if(bufSize > 1){
+        //シェーダのコンパイル時のログの内容を取得する
         std::vector<GLchar> infoLog(bufSize);
         GLsizei length;
-        glGetShaderInfoLog(shader, bufSize, &length, &infoLog[0]);
+        glGetShaderInfoLog(shader, bufSize,&length,&infoLog[0]);
         std::cerr << &infoLog[0] << std::endl;
     }
-
     return static_cast<GLboolean>(status);
 }
 
-/*
- * @fn
- * プログラムオブジェクトのリンク結果を表示する
- * @param program プログラムオブジェクト名
- * @return エラーならば0を返す
- */
-GLboolean printProgramInfoLog(GLuint program) {
-    // リンク結果を取得する
-    GLint status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
-    if (status == GL_FALSE) std::cerr << "Link Error." << std::endl;
-
-    // シェーダのリンク時のログの長さを取得する
-    GLsizei bufSize;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufSize);
-
-    if (bufSize > 1) {
-        // シェーダのリンク時のログ内容を取得する
-        std::vector<GLchar> infoLog(bufSize);
-        GLsizei length;
-        glGetProgramInfoLog(program, bufSize, &length, &infoLog[0]);
-        std::cerr << &infoLog[0] << std::endl;
-    }
-
-    return static_cast<GLboolean>(status);
-}
-
-/*
- * @fn
- * プログラムオブジェクトの実行可能結果を表示する
- * @param program プログラムオブジェクト名
- * @return エラーならば0を返す
- */
-GLboolean printVlidateInfoLog(GLuint program) {
-    // 実行可能結果を取得する
-    glValidateProgram(program);
-    GLint status;
-    glGetProgramiv(program, GL_VALIDATE_STATUS, &status);
-    if (status == GL_FALSE) std::cerr << "Validate Error." << std::endl;
-
-    // シェーダの描画実行時のログの長さを取得する
-    GLsizei bufSize;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufSize);
-
-    if (bufSize > 1) {
-        // シェーダのリンク時のログ内容を取得する
-        std::vector<GLchar> infoLog(bufSize);
-        GLsizei length;
-        glGetProgramInfoLog(program, bufSize, &length, &infoLog[0]);
-        std::cerr << &infoLog[0] << std::endl;
-    }
-
-    return static_cast<GLboolean>(status);
-}
-
-/*
- * @fn
- * プログラムオブジェクトを作成する
- * @param vsrc バーテックスシェーダのソースプログラムの文字列
- * @param gsrc フラグメントシェーダのソースプログラムの文字列
- * @return シェーダプログラムオブジェクト
- */
-GLuint createProgram(const char *vsrc, const char *fsrc) {
-    // 空のプログラムオブジェクトを作成する
+//プログラムを作成する
+// vstc: バーテックスジェーダのソースプログラムの文字列
+// fsrc: フラグメントシェーダのソースプログラムの文字列
+GLuint createProgram(const char *vsrc, const char *fsrc){
+    //からのプログラムオブジェクトを作成する
     const GLuint program(glCreateProgram());
 
-    if (vsrc != nullptr) {
-        // バーテックスシェーダのシェーダオブジェクトを作成する
+    if(vsrc != NULL){
+        //バーテックスシェーダのシェーダオブジェクトを作成する
         const GLuint vobj(glCreateShader(GL_VERTEX_SHADER));
-        glShaderSource(vobj, 1, &vsrc, nullptr);
+        glShaderSource(vobj,1,&vsrc,NULL);
         glCompileShader(vobj);
 
-        // バーテックスシェーダのシェーダオブジェクトをプログラムオブジェクトに組み込む
-        if (printShaderInfoLog(vobj, "vertex shader"))
-            glAttachShader(program, vobj);
+        //バーテックスのシェーダのシェーダオブジェクトをプログラムオブジェクトに組み込む
+        if(printShaderInfoLog(vobj, "vertex shader"))
+            glAttachShader(program,vobj);
         glDeleteShader(vobj);
     }
 
-    if (fsrc != nullptr) {
-        // フラグメントシェーダのシェーダオブジェクトを作成する
+    if(fsrc != NULL){
+        // フラグメントシェーダのシェーダオブジェクトを作成する
         const GLuint fobj(glCreateShader(GL_FRAGMENT_SHADER));
-        glShaderSource(fobj, 1, &fsrc, nullptr);
+        glShaderSource(fobj,1,&fsrc,NULL);
         glCompileShader(fobj);
 
-        // フラグメントシェーダのシェーダオブジェクトをプログラムオブジェクトに組み込む
-        if (printShaderInfoLog(fobj, "fragment shader"))
-            glAttachShader(program, fobj);
+        //フラグメントシェーダのシェーダオブジェクトをプログラムオブジェクトに組み込む
+        if(printShaderInfoLog(fobj, "fragment shader"))
+            glAttachShader(program,fobj);
         glDeleteShader(fobj);
     }
 
-    // プログラムオブジェクトをリンクする
-    glBindAttribLocation(program, 0, "position");
-    glBindFragDataLocation(program, 0, "fragment");
+    //プログラムオブジェクトをリンクする
+    glBindAttribLocation(program,0,"position");
+    glBindFragDataLocation(program,0,"fragment");
     glLinkProgram(program);
 
-    // 作成したプログラムオブジェクトを返す
-    if (printProgramInfoLog(program) /*&& printVlidateInfoLog(program)*/)
+    //作成したプログラムオブジェクトを返す
+    if(printProgramInfoLog(program)){
         return program;
+    }
 
-    // プログラムオブジェクトが作成できなければ0を返す
+    //プログラムオブジェクトが作成できなければ0を返す
     glDeleteProgram(program);
     return 0;
 }
 
-/*
- * @fn
- * シェーダのソースファイルを読み込んだメモリを返す
- * @param name シェーダのソースファイル名
- * @param buffer 読み込んだソースファイルのテキスト
- * @return 読み込み成功時のみtrueを返す
- */
-bool readShaderSource(const char *name, std::vector<GLchar> &buffer) {
-    // ファイル名がNULLだった
-    if (name == nullptr) return false;
+//シェーダのそーづファイるを読み込んだメモリを返す
+// name:シェーダのそーづファイル名
+// buffer: 読み込んだソースファイルのテキスト
+bool readShaderSource(const char *name, std::vector<GLchar> &buffer){
+    //ファイル名がNULLだった
+    if(name == NULL)return false;
 
-    // ソースファイルを開く
+    //ソースファイルを開く
     std::ifstream file(name, std::ios::binary);
-    if (file.fail()) {
-        // 開けなかった
+    if(file.fail()){
+        //開かなかった
         std::cerr << "Error: Can't open source file: " << name << std::endl;
         return false;
     }
 
-    // ファイルの末尾に移動し現在位置(=ファイルサイズ)を得る
-    file.seekg(0L, std::ios::end);
-    auto length = static_cast<GLsizei>(file.tellg());
+    file.seekg(0L,std::ios::end);
+    GLsizei length = static_cast<GLsizei>(file.tellg());
 
-    // ファイルサイズのメモリを確保
-    buffer.resize(length + 1);
+    //ファイルサイズのメモリ確保
+    buffer.resize(length+1);
 
-    // ファイルを先頭から読み込む
+    //ファイルを先頭から読み込む
     file.seekg(0L, std::ios::beg);
-    file.read(buffer.data(), length);
+    file.read(buffer.data(),length);
     buffer[length] = '\0';
 
-    if (file.fail()) {
-        // うまく読み込めなかった
-        std::cerr << "Error; Could not read source file: " << name << std::endl;
+    if(file.fail()){
+        //うまく読み込めめなかった
+        std::cerr << "Error: Could not read source file: " << name << std::endl;
         file.close();
         return false;
     }
 
-    // 読み込み成功
+    //読み込み成功
     file.close();
     return true;
 }
 
-/*
- * @fn
- * シェーダのソースファイルを読み込んでプログラムオブジェクトを作成する
- * @param vert バーテックスシェーダのソースファイル名
- * @param frag フラグメントシェーダのソースファイル名
- * @return エラーならば0を返す
- */
-GLuint loadProgram(const char *vert, const char *frag) {
-    // シェーダのソースファイルを読み込む
+GLuint loadProgram(const char * vert,const char *frag){
+    //シェーダのソースファイルを読み込む
     std::vector<GLchar> vsrc;
-    const bool vstat(readShaderSource(vert, vsrc));
+    const bool vstat(readShaderSource(vert,vsrc));
     std::vector<GLchar> fsrc;
-    const bool fstat(readShaderSource(frag, fsrc));
+    const bool fstat(readShaderSource(frag,fsrc));
 
-    // プログラムオブジェクトを作成する
+    //プログラムオブジェクトを作成する
     return vstat && fstat ? createProgram(vsrc.data(), fsrc.data()) : 0;
 }
 
-// 矩形の頂点の位置
+//短形の頂点の位置
 constexpr Object::Vertex rectangleVertex[] =
         {
-                { -0.5f, -0.5f },
-                {  0.5f, -0.5f },
-                {  0.5f,  0.5f },
-                { -0.5f,  0.5f }
+                {-0.5f,-0.5f},
+                {1.5f,-0.5f},
+                {1.5f,1.5f},
+                {-0.5f,1.5f}
         };
 
-int main(int argc, char * argv[]) {
-    // GLFW を初期化する
-    if (glfwInit() == GL_FALSE) {
-        // 初期化に失敗した
+int main()
+{
+    // GLFWを初期化する
+    if(glfwInit() == GL_FALSE){
+        //初期化に失敗した
         std::cerr << "Can't initialize GLFW" << std::endl;
         return 1;
     }
 
-    // プログラム終了時の処理を登録する
+    //プログラムの終了時の処理を登録する
     atexit(glfwTerminate);
 
-    // OpenGL Version 4.1 Core Profile を選択する
+    // OpenGL Version 3.2 Core Profile を選択する
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // ウィンドウを作成する
-    Window window;
+    //ウィンドウを作成する
+    GLFWwindow *const window(glfwCreateWindow(640,480,"Hello!",NULL,NULL));
+    if(window == NULL){
+        //ウィンドウが作成できなかった
+        std::cerr << "Can't create GLFW window." << std::endl;
+        return 1;
+    }
 
-    // 背景色を指定する
-    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    //作成したウィンドウをOpenGLの処理対象にする
+    glfwMakeContextCurrent(window);
 
-    // プログラムオブジェクトを作成する
+    //GLEWを初期化する
+    glewExperimental = GL_TRUE;
+    if(glewInit() != GLEW_OK)
+    {
+        //GLEWの初期化に失敗した
+        std::cerr << "Can't initialize GLEW" << std::endl;
+        return 1;
+    }
+
+
+    // 垂直同期のタイミングを待つ
+    glfwSwapInterval(1);
+
+    //背景色を指定する
+    glClearColor(1.0f,1.0f,1.0f,0.0f);
+
+    //ビューポートを作成する
+    glViewport(320,240,640,480);
+
+    //プログラムオブジェクトを作成する
     const GLuint program(loadProgram("point.vert", "point.frag"));
 
-    // プログラムオブジェクトからuniform変数の場所を取得する
-    const GLint sizeLoc(glGetUniformLocation(program, "size"));
-    const GLint scaleLoc(glGetUniformLocation(program, "scale"));
+    //図形データを作成する
+    std::unique_ptr<const Shape> shape(new Shape(2,4,rectangleVertex));
 
-    // 図形データを作成する
-    std::unique_ptr<const Shape> shape(new Shape(2, 4, rectangleVertex));
-
-    // ウィンドウが開いている間繰り返す
-    while (window.shouldClose() == GL_FALSE) {
-        // ウィンドウを削除する
+    //ウィンドウが開いている間繰り返す
+    while(glfwWindowShouldClose(window) == GL_FALSE){
+        //ウィンドウを消去する
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // シェーダプログラムの使用開始
+        //シェーダプログラムの使用開始
         glUseProgram(program);
 
-        // uniform変数に値を設定する
-        glUniform2fv(sizeLoc, 1, window.getSize());
-        glUniform1f(scaleLoc, window.getScale());
-
-        // ここで描画処理を行う
-        // 図形を描画する
+        //
+        //ここで描写処理を行う
         shape->draw();
+        //
 
-        // カラーバッファを入れ替えて、イベントを取り出す
-        window.swapBuffers();
+        //カラーバッファを入れ替える
+        glfwSwapBuffers(window);
+
+        //イベントを取り出す
+        glfwWaitEvents();
     }
 }
 
+
+///*
+// * @file main.cpp
+// */
+//
+//
+//#include <cstdlib>
+//#include <iostream>
+//#include <fstream>
+//#include <vector>
+//#include <memory>
+//#include <GL/glew.h>
+//#include <GLFW/glfw3.h>
+//#include "Window.h"
+//#include "Shape.h"
+
+///*
+// * @fn
+// * シェーダオブジェクトのコンパイル結果を表示する
+// * @param shader シェーダオブジェクト名
+// * @param str コンパイルエラーが発生した場所を示す文字列
+// * @return エラーならば0を返す
+// */
+//
+//GLboolean printShaderInfoLog(GLuint shader, const char *str) {
+//    // コンパイル結果を取得する
+//    GLint status;
+//    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+//    if (status == GL_FALSE) std::cerr << "Compile Error in " << str << std::endl;
+//
+//    // シェーダのコンパイル時のログの長さを取得する
+//    GLsizei bufSize;
+//    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &bufSize);
+//
+//    if (bufSize > 1) {
+//        // シェーダのコンパイル時のログの内容を取得する
+//        std::vector<GLchar> infoLog(bufSize);
+//        GLsizei length;
+//        glGetShaderInfoLog(shader, bufSize, &length, &infoLog[0]);
+//        std::cerr << &infoLog[0] << std::endl;
+//    }
+//
+//    return static_cast<GLboolean>(status);
+//}
+//
+///*
+// * @fn
+// * プログラムオブジェクトのリンク結果を表示する
+// * @param program プログラムオブジェクト名
+// * @return エラーならば0を返す
+// */
+//GLboolean printProgramInfoLog(GLuint program) {
+//    // リンク結果を取得する
+//    GLint status;
+//    glGetProgramiv(program, GL_LINK_STATUS, &status);
+//    if (status == GL_FALSE) std::cerr << "Link Error." << std::endl;
+//
+//    // シェーダのリンク時のログの長さを取得する
+//    GLsizei bufSize;
+//    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufSize);
+//
+//    if (bufSize > 1) {
+//        // シェーダのリンク時のログ内容を取得する
+//        std::vector<GLchar> infoLog(bufSize);
+//        GLsizei length;
+//        glGetProgramInfoLog(program, bufSize, &length, &infoLog[0]);
+//        std::cerr << &infoLog[0] << std::endl;
+//    }
+//
+//    return static_cast<GLboolean>(status);
+//}
+//
+///*
+// * @fn
+// * プログラムオブジェクトの実行可能結果を表示する
+// * @param program プログラムオブジェクト名
+// * @return エラーならば0を返す
+// */
+//GLboolean printVlidateInfoLog(GLuint program) {
+//    // 実行可能結果を取得する
+//    glValidateProgram(program);
+//    GLint status;
+//    glGetProgramiv(program, GL_VALIDATE_STATUS, &status);
+//    if (status == GL_FALSE) std::cerr << "Validate Error." << std::endl;
+//
+//    // シェーダの描画実行時のログの長さを取得する
+//    GLsizei bufSize;
+//    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufSize);
+//
+//    if (bufSize > 1) {
+//        // シェーダのリンク時のログ内容を取得する
+//        std::vector<GLchar> infoLog(bufSize);
+//        GLsizei length;
+//        glGetProgramInfoLog(program, bufSize, &length, &infoLog[0]);
+//        std::cerr << &infoLog[0] << std::endl;
+//    }
+//
+//    return static_cast<GLboolean>(status);
+//}
+//
+///*
+// * @fn
+// * プログラムオブジェクトを作成する
+// * @param vsrc バーテックスシェーダのソースプログラムの文字列
+// * @param gsrc フラグメントシェーダのソースプログラムの文字列
+// * @return シェーダプログラムオブジェクト
+// */
+//GLuint createProgram(const char *vsrc, const char *fsrc) {
+//    // 空のプログラムオブジェクトを作成する
+//    const GLuint program(glCreateProgram());
+//
+//    if (vsrc != nullptr) {
+//        // バーテックスシェーダのシェーダオブジェクトを作成する
+//        const GLuint vobj(glCreateShader(GL_VERTEX_SHADER));
+//        glShaderSource(vobj, 1, &vsrc, nullptr);
+//        glCompileShader(vobj);
+//
+//        // バーテックスシェーダのシェーダオブジェクトをプログラムオブジェクトに組み込む
+//        if (printShaderInfoLog(vobj, "vertex shader"))
+//            glAttachShader(program, vobj);
+//        glDeleteShader(vobj);
+//    }
+//
+//    if (fsrc != nullptr) {
+//        // フラグメントシェーダのシェーダオブジェクトを作成する
+//        const GLuint fobj(glCreateShader(GL_FRAGMENT_SHADER));
+//        glShaderSource(fobj, 1, &fsrc, nullptr);
+//        glCompileShader(fobj);
+//
+//        // フラグメントシェーダのシェーダオブジェクトをプログラムオブジェクトに組み込む
+//        if (printShaderInfoLog(fobj, "fragment shader"))
+//            glAttachShader(program, fobj);
+//        glDeleteShader(fobj);
+//    }
+//
+//    // プログラムオブジェクトをリンクする
+//    glBindAttribLocation(program, 0, "position");
+//    glBindFragDataLocation(program, 0, "fragment");
+//    glLinkProgram(program);
+//
+//    // 作成したプログラムオブジェクトを返す
+//    if (printProgramInfoLog(program) /*&& printVlidateInfoLog(program)*/)
+//        return program;
+//
+//    // プログラムオブジェクトが作成できなければ0を返す
+//    glDeleteProgram(program);
+//    return 0;
+//}
+//
+///*
+// * @fn
+// * シェーダのソースファイルを読み込んだメモリを返す
+// * @param name シェーダのソースファイル名
+// * @param buffer 読み込んだソースファイルのテキスト
+// * @return 読み込み成功時のみtrueを返す
+// */
+//bool readShaderSource(const char *name, std::vector<GLchar> &buffer) {
+//    // ファイル名がNULLだった
+//    if (name == nullptr) return false;
+//
+//    // ソースファイルを開く
+//    std::ifstream file(name, std::ios::binary);
+//    if (file.fail()) {
+//        // 開けなかった
+//        std::cerr << "Error: Can't open source file: " << name << std::endl;
+//        return false;
+//    }
+//
+//    // ファイルの末尾に移動し現在位置(=ファイルサイズ)を得る
+//    file.seekg(0L, std::ios::end);
+//    auto length = static_cast<GLsizei>(file.tellg());
+//
+//    // ファイルサイズのメモリを確保
+//    buffer.resize(length + 1);
+//
+//    // ファイルを先頭から読み込む
+//    file.seekg(0L, std::ios::beg);
+//    file.read(buffer.data(), length);
+//    buffer[length] = '\0';
+//
+//    if (file.fail()) {
+//        // うまく読み込めなかった
+//        std::cerr << "Error; Could not read source file: " << name << std::endl;
+//        file.close();
+//        return false;
+//    }
+//
+//    // 読み込み成功
+//    file.close();
+//    return true;
+//}
+//
+///*
+// * @fn
+// * シェーダのソースファイルを読み込んでプログラムオブジェクトを作成する
+// * @param vert バーテックスシェーダのソースファイル名
+// * @param frag フラグメントシェーダのソースファイル名
+// * @return エラーならば0を返す
+// */
+//GLuint loadProgram(const char *vert, const char *frag) {
+//    // シェーダのソースファイルを読み込む
+//    std::vector<GLchar> vsrc;
+//    const bool vstat(readShaderSource(vert, vsrc));
+//    std::vector<GLchar> fsrc;
+//    const bool fstat(readShaderSource(frag, fsrc));
+//
+//    // プログラムオブジェクトを作成する
+//    return vstat && fstat ? createProgram(vsrc.data(), fsrc.data()) : 0;
+//}
+//
+//// 矩形の頂点の位置
+//constexpr Object::Vertex rectangleVertex[] =
+//        {
+//                { -0.5f, -0.5f },
+//                {  0.5f, -0.5f },
+//                {  0.5f,  0.5f },
+//                { -0.5f,  0.5f }
+//        };
+//
+//int main(int argc, char * argv[]) {
+//    // GLFW を初期化する
+//    if (glfwInit() == GL_FALSE) {
+//        // 初期化に失敗した
+//        std::cerr << "Can't initialize GLFW" << std::endl;
+//        return 1;
+//    }
+//
+//    // プログラム終了時の処理を登録する
+//    atexit(glfwTerminate);
+//
+//    // OpenGL Version 4.1 Core Profile を選択する
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+//    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+//    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+//
+//    // ウィンドウを作成する
+//    Window window;
+//
+//    // 背景色を指定する
+//    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+//
+//    // プログラムオブジェクトを作成する
+//    const GLuint program(loadProgram("point.vert", "point.frag"));
+//
+//    // プログラムオブジェクトからuniform変数の場所を取得する
+//    const GLint sizeLoc(glGetUniformLocation(program, "size"));
+//    const GLint scaleLoc(glGetUniformLocation(program, "scale"));
+//
+//    // 図形データを作成する
+//    std::unique_ptr<const Shape> shape(new Shape(2, 4, rectangleVertex));
+//
+//    // ウィンドウが開いている間繰り返す
+//    while (window.shouldClose() == GL_FALSE) {
+//        // ウィンドウを削除する
+//        glClear(GL_COLOR_BUFFER_BIT);
+//
+//        // シェーダプログラムの使用開始
+//        glUseProgram(program);
+//
+//        // uniform変数に値を設定する
+//        glUniform2fv(sizeLoc, 1, window.getSize());
+//        glUniform1f(scaleLoc, window.getScale());
+//
+//        // ここで描画処理を行う
+//        // 図形を描画する
+//        shape->draw();
+//
+//        // カラーバッファを入れ替えて、イベントを取り出す
+//        window.swapBuffers();
+//    }
+//}
+//
