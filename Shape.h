@@ -32,6 +32,10 @@ public:
     : object(new Object(size, vertex_count, vertex))
     , vertex_count(vertex_count){}
 
+    Shape(GLint size, GLsizei vertex_count, const Object::Vertex_With_Color *vertex)
+            : object(new Object(size, vertex_count, vertex))
+            , vertex_count(vertex_count){}
+
     // 描画
     void draw() const {
         // 頂点配列オブジェクトを結合する
@@ -43,6 +47,6 @@ public:
 
     // 描画の実行
     virtual void execute() const {
-        glDrawArrays(GL_LINE_LOOP, 0, vertex_count);
+        glDrawArrays(GL_TRIANGLES, 0, vertex_count);
     }
 };

@@ -124,7 +124,7 @@ public:
     // ウィンドウのサイズ変更時の処理
     static void resize(GLFWwindow *const window, int width, int height) {
         // ウィンドウ全体をビューポートに設定する
-        glViewport(0, 0, width, height);
+        glViewport(0, 0, width*2, height*2);
 
         // このインスタンスのthisポインタを得る
         auto *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));

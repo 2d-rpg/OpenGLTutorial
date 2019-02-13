@@ -1,17 +1,12 @@
-/*
- * @file main.cpp
- */
-
-
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
+#include <stdio.h>
 #include <vector>
-#include <memory>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include "Window.h"
+#include <fstream>
+#include <iostream>
 #include "Shape.h"
+#include "Window.h"
+//#include "include/glad/glad.h"
+#include <GLFW/glfw3.h>
+#include <cmath>
 
 /*
  * @fn
@@ -133,7 +128,7 @@ GLuint createProgram(const char *vsrc, const char *fsrc) {
 
     // プログラムオブジェクトをリンクする
     glBindAttribLocation(program, 0, "position");
-    glBindFragDataLocation(program, 0, "fragment");
+    glBindFragDataLocation(program, 0, "FragColor");
     glLinkProgram(program);
 
     // 作成したプログラムオブジェクトを返す
@@ -207,12 +202,11 @@ GLuint loadProgram(const char *vert, const char *frag) {
 }
 
 // 矩形の頂点の位置
-constexpr Object::Vertex rectangleVertex[] =
+constexpr Object::Vertex triangleVertex[] =
         {
-                { -0.5f, -0.5f },
-                {  0.5f, -0.5f },
-                {  0.5f,  0.5f },
-                { -0.5f,  0.5f }
+                { -1.0f, -1.0f },
+                {  1.0f, -1.0f },
+                {  0.0f,  1.0f },
         };
 
 int main(int argc, char * argv[]) {
@@ -236,10 +230,10 @@ int main(int argc, char * argv[]) {
     Window window;
 
     // 背景色を指定する
-    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
     // プログラムオブジェクトを作成する
-    const GLuint program(loadProgram("point.vert", "point.frag"));
+    const GLuint program(loadProgram("texture.vert", "texture.frag"));
 
     // プログラムオブジェクトからuniform変数の場所を取得する
     const GLint sizeLoc(glGetUniformLocation(program, "size"));
@@ -247,7 +241,11 @@ int main(int argc, char * argv[]) {
     const GLint locationLoc(glGetUniformLocation(program, "location"));
 
     // 図形データを作成する
-    std::unique_ptr<const Shape> shape(new Shape(2, 4, rectangleVertex));
+    std::unique_ptr<const Shape> shape(new Shape(2, 3, triangleVertex));
+
+    int nrAttributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+    std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
     // ウィンドウが開いている間繰り返す
     while (window.shouldClose() == GL_FALSE) {
@@ -262,6 +260,12 @@ int main(int argc, char * argv[]) {
         glUniform1f(scaleLoc, window.getScale());
         glUniform2fv(locationLoc, 1, window.getLocation());
 
+        // update the uniform color
+        double timeValue = glfwGetTime();
+        auto greenValue = static_cast<GLfloat>(sin(timeValue) / 2.0f + 0.5f);
+        int vertexColorLocation = glGetUniformLocation(program, "ourColor");
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
         // ここで描画処理を行う
         // 図形を描画する
         if (printValidateInfoLog(program))
@@ -271,4 +275,3 @@ int main(int argc, char * argv[]) {
         window.swapBuffers();
     }
 }
-
