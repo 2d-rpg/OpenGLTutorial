@@ -4,10 +4,12 @@
 #include<vector>
 #include<memory>
 #include<cmath>
-#include<GL/glew.h>
+#include"include/glad/glad.h"
 #include<GLFW/glfw3.h>
 #include"Window.h"
 #include"Shape.h"
+#define  STB_IMAGE_IMPLEMENTATION
+#include"stb/stb_image.h"
 
 //プログラムオブジェクトのリンク結果を表示する
 // program: プログラムオブジェクト名
@@ -164,16 +166,18 @@ constexpr Object::Vertex6 rectangleVertex6[] ={
         {0.0f, 0.5f, 0.0f,  0.0f, 0.0f, 1.0f}    // top
 };
 
-float texCoords[] = {
-        0.0f, 0.0f,  // lower-left corner
-        1.0f, 0.0f,  // lower-right corner
-        0.5f, 1.0f   // top-center corner
+constexpr Object::Vertex8 rectangleVertex8[] = {
+        // positions          // colors           // texture coords
+        {0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f},   // top right
+        {0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f},   // bottom right
+        {-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f},   // bottom left
+        {-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f}    // top left
 };
 
-int main()
-{
+
+int main() {
     // GLFWを初期化する
-    if(glfwInit() == GL_FALSE){
+    if (glfwInit() == GL_FALSE) {
         //初期化に失敗した
         std::cerr << "Can't initialize GLFW" << std::endl;
         return 1;
@@ -193,10 +197,11 @@ int main()
     Window window;
 
     //背景色を指定する
-    glClearColor(1.0f,1.0f,1.0f,0.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 
     //プログラムオブジェクトを作成する
-    const GLuint program(loadProgram("point.vert", "point.frag"));
+    const GLuint program(loadProgram("pointTexture.vert", "pointTexture.frag"));
+
 
     //uniform変数の場所を取得する
     const GLint sizeLoc(glGetUniformLocation(program,"size"));
@@ -212,8 +217,9 @@ int main()
     // size:頂点の位置の次元
     // vertexcount: 頂点の数
     // vertex: 頂点属性を格納した配列
-    std::unique_ptr<const Shape> shape(new Shape(6,3,rectangleVertex6));
     //std::unique_ptr<const Shape> shape(new Shape(2,4,rectangleVertex));
+    //std::unique_ptr<const Shape> shape(new Shape(6,3,rectangleVertex6));
+    std::unique_ptr<const Shape> shape(new Shape(8,4,rectangleVertex8));
 
 
 
@@ -221,6 +227,8 @@ int main()
     while(window.shouldClose() == GL_FALSE){
         //ウィンドウを消去する
         glClear(GL_COLOR_BUFFER_BIT);
+
+        //glBindTexture(GL_TEXTURE_2D, texture);// bind Texture
 
         //シェーダプログラムの使用開始
         glUseProgram(program);
