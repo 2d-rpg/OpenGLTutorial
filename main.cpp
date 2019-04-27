@@ -1,15 +1,19 @@
-#include<cstdlib>
-#include<iostream>
-#include<fstream>
-#include<vector>
-#include<memory>
-#include<cmath>
-#include"include/glad/glad.h"
-#include<GLFW/glfw3.h>
-#include"Window.h"
-#include"Shape.h"
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <memory>
+#include <cmath>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <string.h>
+#include "Window.h"
+#include "Shape.h"
 #define  STB_IMAGE_IMPLEMENTATION
-#include"stb/stb_image.h"
+#include <stb/stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 //プログラムオブジェクトのリンク結果を表示する
 // program: プログラムオブジェクト名
@@ -88,8 +92,10 @@ GLuint createProgram(const char *vsrc, const char *fsrc){
     }
 
     //プログラムオブジェクトをリンクする
-    glBindAttribLocation(program,0,"position");
-    glBindFragDataLocation(program,0,"fragment");
+    glBindAttribLocation(program,0,"aPos");
+    glBindAttribLocation(program,1,"aPos");
+    glBindAttribLocation(program,2,"aPos");
+    glBindFragDataLocation(program,0,"FragColor");
     glLinkProgram(program);
 
     //作成したプログラムオブジェクトを返す
@@ -168,14 +174,20 @@ constexpr Object::Vertex6 rectangleVertex6[] ={
 
 constexpr Object::Vertex8 rectangleVertex8[] = {
         // positions          // colors           // texture coords
-        {0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f},   // top right
-        {0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f},   // bottom right
-        {-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.5f, 1.0f},   // bottom left
-        {-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f}    // top left
+        {0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 1.0f},   // top right
+        {0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f},   // bottom right
+        {-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   1.0f, 0.0f},   // bottom left
+        {-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   1.0f, 1.0f}    // top left
 };
 
 
 int main() {
+    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+    glm::mat4 trans = glm::mat4(1.0f);
+    trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
+    vec = trans * vec;
+    std::cout << vec.x << " " << vec.y << " "<< vec.z << std::endl;
+
     // GLFWを初期化する
     if (glfwInit() == GL_FALSE) {
         //初期化に失敗した
@@ -185,7 +197,6 @@ int main() {
 
     //プログラムの終了時の処理を登録する
     atexit(glfwTerminate);
-
 
     // OpenGL Version 3.2 Core Profile を選択する
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -202,13 +213,10 @@ int main() {
     //プログラムオブジェクトを作成する
     const GLuint program(loadProgram("pointTexture.vert", "pointTexture.frag"));
 
-
     //uniform変数の場所を取得する
     const GLint sizeLoc(glGetUniformLocation(program,"size"));
     const GLint scaleLoc(glGetUniformLocation(program,"scale"));
     const GLint locationLoc(glGetUniformLocation(program,"location"));
-
-
 
     // uniform 変数の場所を取得する
     const GLint aspectLoc(glGetUniformLocation(program,"aspect"));
@@ -221,7 +229,9 @@ int main() {
     //std::unique_ptr<const Shape> shape(new Shape(6,3,rectangleVertex6));
     std::unique_ptr<const Shape> shape(new Shape(8,4,rectangleVertex8));
 
-
+    //tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+    //-----------------------------------------
+    glUseProgram(program);
 
     //ウィンドウが開いている間繰り返す
     while(window.shouldClose() == GL_FALSE){
@@ -233,11 +243,20 @@ int main() {
         //シェーダプログラムの使用開始
         glUseProgram(program);
 
+        // bind textures on corresponding texture units
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, 1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 2);
+
         // uniform変数に値を設定する
         //glUniform1f(aspectLoc, window.getAspect());
-        glUniform2fv(sizeLoc,1,window.getSize());
-        glUniform1f(scaleLoc,window.getScale());
+        //glUniform2fv(sizeLoc,1,window.getSize());
+        //glUniform1f(scaleLoc,window.getScale());
         glUniform2fv(locationLoc,1,window.getLocation());
+
+        glUniform1i(glGetUniformLocation(program, "texture1"), 0);
+        glUniform1i(glGetUniformLocation(program, "texture2"), 1);
 
         //
         //ここで描写処理を行う
