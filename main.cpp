@@ -182,11 +182,6 @@ constexpr Object::Vertex8 rectangleVertex8[] = {
 
 
 int main() {
-    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-    glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
-    vec = trans * vec;
-    std::cout << vec.x << " " << vec.y << " "<< vec.z << std::endl;
 
     // GLFWを初期化する
     if (glfwInit() == GL_FALSE) {
@@ -248,6 +243,18 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, 1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 2);
+
+        //create transformations
+        glm::mat4 transform = glm::mat4(1.0f);
+        transform = glm::translate(transform,glm::vec3(0.5f,-0.5f,0.0f));
+        transform = glm::rotate(transform,(float)glfwGetTime(),glm::vec3(0.0f,0.0f,1.0f));
+
+        //get matrix's uniform location and set matrix
+        const GLint transformLoc = glGetUniformLocation(program,"transform");
+        glUniformMatrix4fv(transformLoc,1,GL_FALSE,glm::value_ptr(transform));
+
+
+
 
         // uniform変数に値を設定する
         //glUniform1f(aspectLoc, window.getAspect());
